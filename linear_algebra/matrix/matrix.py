@@ -36,7 +36,7 @@ class Matrix:
         return Matrix.remove_row(self.transpose(), column).transpose()
 
     def assert_square(self):
-        assert len(self.transpose().rows[0].scalars) == len(self.rows[0].scalars), "The matrix must be square"
+        assert len(self.columns[0].scalars) == len(self.rows[0].scalars), "The matrix must be square"
 
     def trace(self):
         self.assert_square()
