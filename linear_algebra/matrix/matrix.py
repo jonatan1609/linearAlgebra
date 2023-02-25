@@ -1,4 +1,6 @@
 from ..vector import Vector
+from typing import List
+
 
 __all__ = ["Matrix"]
 
@@ -8,18 +10,28 @@ class Matrix:
         self.rows = list(rows)
         self.columns = self.transpose().rows
 
+    @classmethod
+    def __init_without_transpose(cls, rows: List[Vector], columns: List[Vector]) -> "Matrix":
+        matrix = cls.__new__(cls)
+        matrix.rows = rows
+        matrix.columns = columns
+        return matrix
+
+    @property
+    def size(self):
+        return len(self.rows), len(self.columns)
+
     def transpose(self) -> "Matrix":
-        matrix = [Vector() for _ in range(len(self.rows[0].scalars))]
+        new_matrix = [Vector() for _ in self.rows[0].scalars]
         for row in self.rows:
             for s, scalar in enumerate(row.scalars):
-                matrix[s].scalars.append(scalar)
-
-        return Matrix(*matrix)
+                new_matrix[s].scalars.append(scalar)
+        return Matrix.__init_without_transpose(new_matrix, self.rows)
 
     def _mul(self, other):
         if isinstance(other, (float, int)):
             return Matrix(*[Vector(*[other * scalar for scalar in row.scalars]) for row in self.rows])
-        assert len(self.rows[0].scalars) == len(other.transpose().rows[0].scalars), "Orders of matrices does not match"
+        assert self.size[1] == other.size[0], "Orders of matrices do not match"
         matrix = []
         transposed_other = other.transpose()
         for i in range(len(self.rows)):
@@ -36,7 +48,7 @@ class Matrix:
         return Matrix.remove_row(self.transpose(), column).transpose()
 
     def assert_square(self):
-        assert len(self.transpose().rows[0].scalars) == len(self.rows[0].scalars), "The matrix must be square"
+        assert self.size[0] == self.size[1], "The matrix must be square"
 
     def trace(self):
         self.assert_square()
@@ -52,13 +64,10 @@ class Matrix:
         self.assert_square()
         start = 0
         result = 0
-        size = len(self.rows[0].scalars)
+        if self.size[0] == 1:
+            return self.rows[0].scalars[0]
 
-        if size == 2:
-            return self.rows[0].scalars[0] * self.rows[1].scalars[1] \
-                 - self.rows[0].scalars[1] * self.rows[1].scalars[0]
-
-        for j in range(size):
+        for j in range(self.size[0]):
             result += ((-1) ** (start + j)) * \
                       self.rows[start].scalars[j] \
                       * abs(self.remove_row(start).remove_column(j))
