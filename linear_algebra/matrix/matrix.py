@@ -1,8 +1,20 @@
 from ..vector import Vector
-from typing import List
-
+from typing import List, Callable
+from functools import partialmethod, wraps
 
 __all__ = ["Matrix"]
+
+
+def det_cache(f):
+    results = {}
+
+    @wraps(f)
+    def wrapper(self: "Matrix"):
+        flat = tuple(tuple(vector.scalars) for vector in self.rows)
+        if (result := results.get(flat)) is None:
+            results[flat] = result = f(self)
+        return result
+    return wrapper
 
 
 class Matrix:
@@ -41,6 +53,17 @@ class Matrix:
             matrix.append(vector)
         return Matrix(*matrix)
 
+    @classmethod
+    def from_function(cls, n_rows: int, n_columns: int, function: Callable[[int, int], int]) -> "Matrix":
+        return cls(*[Vector(*[function(i, j) for i in range(n_columns)]) for j in range(n_rows)])
+
+    zeros: Callable[[int, int], "Matrix"] = partialmethod(from_function, function=lambda i, j: 0)
+    ones: Callable[[int, int], "Matrix"] = partialmethod(from_function, function=lambda i, j: 1)
+
+    @classmethod
+    def unit(cls, size: int):
+        return cls.from_function(size, size, lambda i, j: int(i == j))
+
     def remove_row(self, row):
         return Matrix(*(self.rows[:row] + self.rows[row + 1:]))
 
@@ -60,7 +83,8 @@ class Matrix:
     def __rmul__(self, other):
         return Matrix._mul(other, self)
 
-    def __abs__(self):
+    @det_cache
+    def __abs__(self) -> int:
         self.assert_square()
         start = 0
         result = 0
@@ -83,4 +107,4 @@ class Matrix:
     def __str__(self):
         return "\n".join(str(row) for row in self.rows)
 
-    det = __abs__
+    det: Callable = __abs__

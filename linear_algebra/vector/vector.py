@@ -1,9 +1,14 @@
+from fractions import Fraction
+
 __all__ = ["Vector"]
 
 
 class Vector:
     def __init__(self, *scalars: int):
         self.scalars = list(scalars)
+
+    def norm(self):
+        return Fraction(*((self * self) ** 0.5).as_integer_ratio())
 
     def __add__(self, other: "Vector"):
         return Vector(*[scalar + other for scalar, other in zip(self.scalars, other.scalars)])
